@@ -5,7 +5,13 @@ namespace UmamusumeData
 {
     public static class UmaDataHelper
     {
-        private const string key = "9c2bab97bcf8c0c4f1a9ea7881a213f6c9ebf9d8d4c6a8e43ce5a259bde7e9fd";
+        private static readonly string[] keys =
+        {
+            "9c2bab97bcf8c0c4f1a9ea7881a213f6c9ebf9d8d4c6a8e43ce5a259bde7e9fd",
+            "a713a5c79dbc9497c0a88669"
+        };
+
+        private static string key = "";
 
         private readonly static List<DataDirectory> dataDirectories =
         [
@@ -24,7 +30,6 @@ namespace UmamusumeData
         public static string MetaFile => Path.Combine(UmamusumeDirectory, "meta");
 
         public static string MasterFile => Path.Combine(UmamusumeDirectory, "master", "master.mdb");
-
 
         public static List<DataDirectory> ScanDirectories()
         {
@@ -52,6 +57,7 @@ namespace UmamusumeData
             {
                 BinaryReader reader = new(File.OpenRead(MetaFile));
                 isMetaFileEncrypted = reader.ReadUInt32() != 0x694C5153;
+
                 reader.Dispose();
             }
 
@@ -89,6 +95,14 @@ namespace UmamusumeData
                 return manifestEntries;
         }
 
+        public static void UpdateManifestEntries(IEnumerable<ManifestEntry> entries)
+        {
+            SQLiteConnection connection = OpenDatabase(MetaFile, isMetaFileEncrypted);
+            connection.UpdateAll(entries);
+            connection.Close();
+            connection.Dispose();
+        }
+
         public static List<T> GetMasterDatabaseRows<T>(Func<T, bool>? condition = null) where T : new()
             => GetRows(OpenDatabase(MasterFile), condition);
 
@@ -98,7 +112,31 @@ namespace UmamusumeData
 
             if (encrypted)
             {
-                connection.ExecuteScalar<string>($"pragma hexkey = '{key}';");
+                if (string.IsNullOrEmpty(key))
+                {
+                    for (int i = 0; i < keys.Length; i++)
+                    {
+                        try
+                        {
+                            string checkKey = keys[i];
+                            connection.ExecuteScalar<string>($"pragma hexkey = '{checkKey}';");
+                            string cipher = connection.ExecuteScalar<string>($"SELECT sqlite3mc_config('cipher')");
+                            if (cipher == "chacha20")
+                            {
+                                key = checkKey;
+                                break;
+                            }
+                        }
+                        catch (SQLiteException)
+                        {
+                            continue;
+                        }
+                    }
+                }
+                else
+                {
+                    connection.ExecuteScalar<string>($"pragma hexkey = '{key}';");
+                }
             }
 
             return connection;

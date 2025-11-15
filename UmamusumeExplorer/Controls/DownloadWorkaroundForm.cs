@@ -9,9 +9,6 @@ namespace UmamusumeExplorer.Controls
 {
     public partial class DownloadWorkaroundForm : Form
     {
-        private const string key = "9c2bab97bcf8c0c4f1a9ea7881a213f6c9ebf9d8d4c6a8e43ce5a259bde7e9fd";
-
-        private static bool isMetaFileEncrypted = false;
         private static readonly string metaFile = UmaDataHelper.MetaFile;
         private static readonly string metaFileBackup = metaFile + ".bak";
 
@@ -20,10 +17,6 @@ namespace UmamusumeExplorer.Controls
         public DownloadWorkaroundForm()
         {
             InitializeComponent();
-
-            BinaryReader reader = new(File.OpenRead(metaFile));
-            isMetaFileEncrypted = reader.ReadUInt32() != 0x694C5153;
-            reader.Dispose();
 
             Task.Run(() =>
             {
@@ -46,20 +39,11 @@ namespace UmamusumeExplorer.Controls
             if (!File.Exists(metaFileBackup))
                 File.Copy(metaFile, metaFileBackup, true);
 
-            SQLiteConnection connection = new(metaFile, SQLiteOpenFlags.ReadWrite);
-            if (isMetaFileEncrypted)
+            foreach (var item in liveAudioEntries)
             {
-                connection.ExecuteScalar<string>($"pragma hexkey = '{key}';");
+                item.Group = AssetBundleGroup.Default;
             }
-            connection.RunInTransaction(() =>
-            {
-                foreach (var item in liveAudioEntries)
-                {
-                    item.Group = AssetBundleGroup.Default;
-                }
-                connection.UpdateAll(liveAudioEntries);
-            });
-            connection.Close();
+            UmaDataHelper.UpdateManifestEntries(liveAudioEntries);
 
             buttonModifyDatabase.Enabled = false;
             buttonRevert.Enabled = true;
