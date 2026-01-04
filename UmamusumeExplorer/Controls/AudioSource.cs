@@ -1,6 +1,6 @@
 ﻿namespace UmamusumeExplorer.Controls
 {
-    public abstract class AudioSource
+    public abstract class AudioSource : IDisposable
     {
         private IAudioTrack[]? tracks;
 
@@ -18,5 +18,7 @@
         }
 
         protected abstract IAudioTrack[] InitializeTracks();
+
+        public abstract void Dispose();
     }
 }

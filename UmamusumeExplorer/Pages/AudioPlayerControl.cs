@@ -97,20 +97,18 @@ namespace UmamusumeExplorer.Pages
                 {
                     if ((File.Exists(acbPath) && File.Exists(awbPath)) || File.Exists(acbPath))
                     {
-                        AtomAudioSource? audioSource = new(baseName, acbPath, awbPath);
+                        if (!AtomAudioSource.TryCreate(baseName, acbPath, awbPath, out AtomAudioSource? audioSource)) return;
+                        if (audioSource is null) return;
 
-                        if (audioSource is not null)
+                        int trackCount = audioSource.TrackCount;
+                        if (trackCount > 0)
                         {
-                            int trackCount = audioSource.TrackCount;
-                            if (trackCount > 0)
+                            fileListView.Invoke(() =>
                             {
-                                fileListView.Invoke(() =>
-                                    {
-                                        item.SubItems[1].Text = trackCount.ToString();
-                                    });
-                                item.Tag = audioSource;
-                                item.ForeColor = Color.Black;
-                            }
+                                item.SubItems[1].Text = trackCount.ToString();
+                            });
+                            item.Tag = audioSource;
+                            item.ForeColor = Color.Black;
                         }
                     }
                 });
