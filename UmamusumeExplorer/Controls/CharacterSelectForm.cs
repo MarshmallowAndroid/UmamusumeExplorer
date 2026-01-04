@@ -8,7 +8,7 @@ namespace UmamusumeExplorer.Controls
 {
     partial class CharacterSelectForm : Form
     {
-        private readonly IEnumerable<CharaData> charaDatas = AssetTables.CharaDatas;
+        private readonly List<CharaData> charaDatas = [.. AssetTables.CharaDatas];
         private readonly IEnumerable<LivePermissionData> livePermissionData;
         private readonly List<int> allowedCharas = new();
         private readonly List<int> alreadySelected = new();

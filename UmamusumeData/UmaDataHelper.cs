@@ -90,7 +90,7 @@ namespace UmamusumeData
             manifestEntries ??= GetRows<ManifestEntry>(OpenDatabase(MetaFile, isMetaFileEncrypted));
 
             if (condition is not null)
-                return manifestEntries.Where(condition).ToList();
+                return [.. manifestEntries.Where(condition)];
             else
                 return manifestEntries;
         }
