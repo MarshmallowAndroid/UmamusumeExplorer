@@ -55,7 +55,8 @@ namespace UmamusumeData
         {
             if (File.Exists(MetaFile))
             {
-                BinaryReader reader = new(File.OpenRead(MetaFile));
+                FileStream fileStream = new(MetaFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                BinaryReader reader = new(fileStream);
                 isMetaFileEncrypted = reader.ReadUInt32() != 0x694C5153;
 
                 reader.Dispose();
