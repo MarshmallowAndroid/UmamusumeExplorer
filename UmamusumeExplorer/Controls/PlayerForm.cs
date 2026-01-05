@@ -381,6 +381,8 @@ namespace UmamusumeExplorer.Controls
                         else break;
                     }
 
+                    if (lyricsTriggerIndex >= lyricsTriggers.Count - 1) break;
+
                     string lyrics = lyricsTriggers[lyricsTriggerIndex - 1].Lyrics;
                     BeginInvoke(() =>
                     {
