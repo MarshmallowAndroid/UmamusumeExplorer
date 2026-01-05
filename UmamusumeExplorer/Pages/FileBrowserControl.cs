@@ -116,19 +116,21 @@ namespace UmamusumeExplorer.Pages
 
             IEnumerable<KeyValuePair<string, ManifestEntry>> entriesToAdd = entries;
 
-            if (node.FullPath != "Root")
+            if (node.Tag is ManifestEntry entry)
             {
-                ManifestEntry entry = (ManifestEntry)node.Tag;
+                UpdateSelectedEntries(entry, node.Checked);
+                entriesToAdd = selectedEntries;
+            }
+            else
+            {
+                if (targetEntries is null) return;
 
-                if (entry is not null)
+                if (node.FullPath == "Root")
                 {
-                    UpdateSelectedEntries(entry, node.Checked);
-                    entriesToAdd = selectedEntries;
+                    entriesToAdd = targetEntries;
                 }
                 else
                 {
-                    if (targetEntries is null) return;
-
                     string convertedNodePath = node.FullPath["Root/".Length..];
                     entriesToAdd = targetEntries.Where(ga => ga.Key.StartsWith(convertedNodePath + '/'));
                 }
@@ -357,6 +359,12 @@ namespace UmamusumeExplorer.Pages
 
             fileTreeView.Nodes[0].Collapse();
             fileTreeView.Nodes[0].Nodes.Add("");
+
+            if (searched)
+            {
+                fileTreeView.ExpandAll();
+                fileTreeView.Nodes[0].EnsureVisible();
+            }
         }
 
         private void ExtractListView_Resize(object sender, EventArgs e)
