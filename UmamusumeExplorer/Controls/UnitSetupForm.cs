@@ -99,14 +99,17 @@ namespace UmamusumeExplorer.Controls
             ControlHelpers.ShowFormDialogCenter(characterSelectForm, this);
 
             int selectedCharacter = characterSelectForm.SelectedCharacter;
-            if (selectedCharacter == 0) return;
+            if (selectedCharacter == -1) return;
 
             foreach (Control control in singersPanel.Controls)
             {
                 if (control is not CharacterPositionControl characterPosition) continue;
 
-                if (characterPosition.CharacterId == selectedCharacter)
-                    characterPosition.CharacterId = initialCharacter;
+                if (characterPosition.CharacterId != 0)
+                {
+                    if (characterPosition.CharacterId == selectedCharacter)
+                        characterPosition.CharacterId = initialCharacter;
+                }
             }
 
             clickedCharacterPositionControl.CharacterId = selectedCharacter;

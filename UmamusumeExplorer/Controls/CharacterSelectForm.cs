@@ -17,6 +17,13 @@ namespace UmamusumeExplorer.Controls
         {
             InitializeComponent();
 
+            charaDatas.Add(new CharaData()
+            {
+                Id = 0
+            });
+            charaDatas.Sort((c1, c2) => c1.Id.CompareTo(c2.Id));
+            allowedCharas.Add(0);
+
             livePermissionData = permissionData;
             foreach (var lpd in livePermissionData)
             {
@@ -50,7 +57,7 @@ namespace UmamusumeExplorer.Controls
             };
         }
 
-        public int SelectedCharacter { get; private set; } = 0;
+        public int SelectedCharacter { get; private set; } = -1;
 
         private void CharacterSelectForm_Load(object sender, EventArgs e)
         {

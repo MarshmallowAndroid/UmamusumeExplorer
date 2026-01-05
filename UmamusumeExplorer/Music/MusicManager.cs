@@ -67,7 +67,7 @@ namespace UmamusumeExplorer.Music
             int sfx = unitSetupForm.Sfx ? 1 : 2;
             AwbReader? okeAwb = GetAwbFile(audioAssetEntries.FirstOrDefault(aa => aa.BaseName == $"snd_bgm_live_{musicId}_oke_{sfx:d2}.awb"));
 
-            // Legend-Changer has extra variation
+            // Variation
             int variation = random.Next(1, 6);
             okeAwb ??= GetAwbFile(audioAssetEntries.FirstOrDefault(
                 aa => aa.BaseName == $"snd_bgm_live_{musicId:d4}_oke_{sfx:d2}_{variation:d2}.awb"));
@@ -77,12 +77,36 @@ namespace UmamusumeExplorer.Music
             // Abort unit setup when character selection is not confirmed
             if (CharacterPositions is null) return false;
 
+            // For Legend-Changer
+            int mainCharacterId = CharacterPositions.First(p => p.Position == 0).CharacterId;
+            int announcerGender = random.Next(1, 3);
+
+            // Voice over for certain Umamusume with either male or female announcer
+            AwbReader? voiceOverAwb = GetAwbFile(audioAssetEntries.FirstOrDefault(aa => aa.BaseName == $"snd_bgm_live_{musicId}_vo_{mainCharacterId:d4}_{announcerGender:d2}.awb"));
+            voiceOverAwb ??= GetAwbFile(audioAssetEntries.FirstOrDefault(aa => aa.BaseName == $"snd_bgm_live_{musicId}_vo_{0:d4}_{announcerGender:d2}.awb"));
+
+            IEnumerable<LivePermissionData> allowedCharas = LivePermissionDataHelper.GetLivePermissionData(musicId);
+            for (int i = 0; i < CharacterPositions.Length; i++)
+            {
+                if (CharacterPositions[i].CharacterId == 0)
+                {
+                    int charaId;
+                    do
+                    {
+                        charaId = allowedCharas.ElementAt(random.Next(0, allowedCharas.Count())).CharaId;
+                        if (CharacterPositions.Where(c => c.CharacterId == charaId).Count() > 0) continue;
+                        CharacterPositions[i].CharacterId = charaId;
+                        break;
+                    } while (true);
+                }
+            }
+
             // Add AWB files for the selected characters
             AwbReader[] charaAwbs = new AwbReader[singingMembers];
 
             List<int> missingCharas = [];
 
-            // Get character parts
+            // Get character audio resources
             foreach (var characterPosition in CharacterPositions)
             {
                 AwbReader? charaAwb = GetAwbFile(audioAssetEntries.First(aa => aa.BaseName == $"snd_bgm_live_{musicId}_chara_{characterPosition.CharacterId}_01.awb"));
@@ -109,14 +133,6 @@ namespace UmamusumeExplorer.Music
 
             // Initialize tracks, can be done during playback
             songMixer.InitializeCharaTracks(charaAwbs);
-
-            // For Legend-Changer
-            int mainCharacterId = CharacterPositions.First(p => p.Position == 0).CharacterId;
-            int announcerGender = random.Next(1, 3);
-
-            // Voice over for certain Umamusume with either male or female announcer
-            AwbReader? voiceOverAwb = GetAwbFile(audioAssetEntries.FirstOrDefault(aa => aa.BaseName == $"snd_bgm_live_{musicId}_vo_{mainCharacterId}_{announcerGender:d2}.awb"));
-            voiceOverAwb ??= GetAwbFile(audioAssetEntries.FirstOrDefault(aa => aa.BaseName == $"snd_bgm_live_{musicId}_vo_{0:d4}_{announcerGender:d2}.awb"));
 
             if (voiceOverAwb is not null)
                 songMixer.InitializeVoiceOver(voiceOverAwb, VoiceTrigger);
