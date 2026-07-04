@@ -21,6 +21,10 @@ namespace UmamusumeExplorer.Assets
             keys = new byte[baseKeys.Length * 8];
 
             byte[] keyBytes = BitConverter.GetBytes(key);
+            if (!BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(keyBytes);
+            }
 
             for (int i = 0; i < baseKeys.Length; i++)
             {
@@ -50,16 +54,14 @@ namespace UmamusumeExplorer.Assets
 
             if (read > 0)
             {
-                int bytesPos = (int)Position - read;
-                if (bytesPos < headerSize)
+                long streamPosition = Position - read;
+                int decryptOffset = streamPosition < headerSize
+                    ? (int)Math.Min(read, headerSize - streamPosition)
+                    : 0;
+
+                for (int i = decryptOffset; i < read; i++)
                 {
-                    int bytesPosOffset = offset - bytesPos;
-                    bytesPos = headerSize;
-                    offset = bytesPosOffset + headerSize;
-                }
-                for (int i = offset; i < read; i++)
-                {
-                    buffer[i] = (byte)(buffer[i] ^ keys[bytesPos++ % keys.Length]);
+                    buffer[offset + i] = (byte)(buffer[offset + i] ^ keys[(int)((streamPosition + i) % keys.Length)]);
                 }
             }
 

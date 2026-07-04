@@ -1,4 +1,5 @@
 ﻿using SQLite;
+using SQLitePCL;
 using UmamusumeData.DataDirectories;
 
 namespace UmamusumeData
@@ -62,7 +63,7 @@ namespace UmamusumeData
                 reader.Dispose();
             }
 
-            SQLitePCL.raw.SetProvider(new SQLitePCL.SQLite3Provider_e_sqlite3());
+            SQLitePCL.Batteries_V2.Init();
         }
 
         public static string GetPath(ManifestEntry? entry)
@@ -109,38 +110,60 @@ namespace UmamusumeData
 
         private static SQLiteConnection OpenDatabase(string databaseFile, bool encrypted = false)
         {
-            SQLiteConnection connection = new(databaseFile, SQLiteOpenFlags.ReadWrite);
-
             if (encrypted)
             {
                 if (string.IsNullOrEmpty(key))
                 {
-                    for (int i = 0; i < keys.Length; i++)
+                    Exception? lastException = null;
+
+                    foreach (string checkKey in keys)
                     {
                         try
                         {
-                            string checkKey = keys[i];
-                            connection.ExecuteScalar<string>($"pragma hexkey = '{checkKey}';");
-                            string cipher = connection.ExecuteScalar<string>($"SELECT sqlite3mc_config('cipher')");
-                            if (cipher == "chacha20")
-                            {
-                                key = checkKey;
-                                break;
-                            }
+                            using SQLiteConnection testConnection = OpenEncryptedDatabase(databaseFile, checkKey);
+                            _ = testConnection.ExecuteScalar<int>("SELECT count(*) FROM sqlite_master;");
+                            key = checkKey;
+                            break;
                         }
-                        catch (SQLiteException)
+                        catch (Exception exception) when (exception is SQLiteException or InvalidOperationException)
                         {
-                            continue;
+                            lastException = exception;
                         }
                     }
+
+                    if (string.IsNullOrEmpty(key))
+                    {
+                        throw new InvalidOperationException("Unable to open encrypted meta database with any known key.", lastException);
+                    }
                 }
-                else
-                {
-                    connection.ExecuteScalar<string>($"pragma hexkey = '{key}';");
-                }
+
+                return OpenEncryptedDatabase(databaseFile, key);
             }
 
-            return connection;
+            return new SQLiteConnection(databaseFile, SQLiteOpenFlags.ReadWrite);
+        }
+
+        private static SQLiteConnection OpenEncryptedDatabase(string databaseFile, string hexKey)
+        {
+            SQLiteConnection connection = new(databaseFile, SQLiteOpenFlags.ReadWrite);
+
+            try
+            {
+                connection.ExecuteScalar<string>("pragma cipher = 'chacha20';");
+
+                int result = raw.sqlite3_key(connection.Handle, Convert.FromHexString(hexKey));
+                if (result != raw.SQLITE_OK)
+                {
+                    throw new InvalidOperationException($"sqlite3_key failed with result {result}.");
+                }
+
+                return connection;
+            }
+            catch
+            {
+                connection.Dispose();
+                throw;
+            }
         }
 
         private static List<T> GetRows<T>(SQLiteConnection connection, Func<T, bool>? condition = null) where T : new()
