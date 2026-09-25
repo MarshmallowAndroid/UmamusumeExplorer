@@ -9,7 +9,8 @@ namespace UmamusumeData
         private static readonly string[] keys =
         [
             "9c2bab97bcf8c0c4f1a9ea7881a213f6c9ebf9d8d4c6a8e43ce5a259bde7e9fd",
-            "c753a5e8f5f78294f7fef57df4a14ffbf9a896cea1d4e09947e0d904e7fde8eaf0"
+            "c753a5e8f5f78294f7fef57df4a14ffbf9a896cea1d4e09947e0d904e7fde8eaf0",
+            "8908b6dca7b6db99dda0"
         ];
 
         private static string key = "";
